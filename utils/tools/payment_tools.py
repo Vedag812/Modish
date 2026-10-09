@@ -282,7 +282,7 @@ def get_authorization_status(auth_code: str):
 
 # ==================== DATABASE FUNCTIONS ====================
 
-def save_order_to_db(customer_id: str, items: list, total_amount: float, payment_status: str = "pending", razorpay_order_id: str = None):
+def save_order_to_db(customer_id: str, items: Optional[List[dict]] = None, total_amount: float = 0.0, payment_status: str = "pending", razorpay_order_id: Optional[str] = None):
     """Save order to Firebase database"""
     try:
         order_id = f"ORD{random.randint(100000, 999999)}"
@@ -333,7 +333,7 @@ def save_transaction_to_db(order_id: str, customer_id: str, amount: float, payme
         return {"status": "error", "message": str(e)}
 
 
-def create_payment_link(customer_id: str, amount: float, description: str = "", items: Optional[list] = None):
+def create_payment_link(customer_id: str, amount: float, description: str = "", items: Optional[List[dict]] = None):
     """
     Create a REAL Razorpay payment link for the customer.
     
@@ -422,7 +422,7 @@ def create_payment_link(customer_id: str, amount: float, description: str = "", 
         }
 
 
-def process_payment(customer_id: str, amount: float, payment_method: str, order_id: Optional[str] = None, items: Optional[list] = None):
+def process_payment(customer_id: str, amount: float, payment_method: str, order_id: Optional[str] = None, items: Optional[List[dict]] = None):
     """
     Process a payment transaction and save to database.
     
@@ -575,7 +575,7 @@ def get_order_status(order_id: str):
         return {"status": "error", "message": str(e)}
 
 
-def confirm_payment(order_id: str, customer_id: Optional[str] = None, amount: Optional[float] = None, items: Optional[list] = None):
+def confirm_payment(order_id: str, customer_id: Optional[str] = None, amount: Optional[float] = None, items: Optional[List[dict]] = None):
     """
     Confirm that payment has been completed for an order.
     Checks with Razorpay if payment was actually made, otherwise simulates realistic payment flow.
@@ -698,7 +698,7 @@ def confirm_payment(order_id: str, customer_id: Optional[str] = None, amount: Op
         return {"status": "error", "message": str(e)}
 
 
-def process_in_store_pos(customer_id: str, amount: float, payment_method: str, store_location: str, items: Optional[list] = None):
+def process_in_store_pos(customer_id: str, amount: float, payment_method: str, store_location: str, items: Optional[List[dict]] = None):
     """
     Process payment via in-store Point of Sale (POS) system.
     
