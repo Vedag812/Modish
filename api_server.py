@@ -58,6 +58,8 @@ DEFAULT_ORIGINS = [
 ]
 ALL_ORIGINS = ALLOWED_ORIGINS + DEFAULT_ORIGINS
 
+from config.config import DEFAULT_MODEL
+
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
@@ -66,6 +68,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "model": DEFAULT_MODEL, "timestamp": datetime.now().isoformat()}
 
 # Session management for chat
 session_service = InMemorySessionService()

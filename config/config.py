@@ -24,9 +24,12 @@ USER_ID = "customer_user"
 FIREBASE_SERVICE_ACCOUNT_PATH = os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH", "./firebase-service-account.json")
 print("✅ Using Firebase Firestore")
 
-# Recommended update in config/config.py:
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "gemini-3.1-flash-lite")
+if DEFAULT_MODEL in ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]:
+    DEFAULT_MODEL = "gemini-3.1-flash-lite"
 FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemini-3.1-flash-lite")
+if FALLBACK_MODEL in ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]:
+    FALLBACK_MODEL = "gemini-3.1-flash-lite"
 
 # Agent Configuration
 MAX_RETRIES = 2
