@@ -146,8 +146,38 @@ def get_seasonal_promotions(category: str = None):
     }
 
 def search_products_tool(query: str = "", category: str = "", max_price: float = None, min_price: float = None, max_results: int = 10):
-    """Search for products by name, category, and price range."""
+    """
+    Search for products by name, category, and price range.
+    Includes smart fallback when no direct matches are found.
+    """
     results = search_products(query=query, category=category, min_price=min_price, max_price=max_price, limit=max_results)
+    
+    # Fallback 1: If no results with category or price filters, broaden the search to match query across all categories/prices
+    if not results and query and (category or min_price is not None or max_price is not None):
+        broader_results = search_products(query=query, limit=max_results)
+        if broader_results:
+            return {
+                "status": "success",
+                "results": broader_results,
+                "count": len(broader_results),
+                "query": query,
+                "note": f"No items matched the specific category/price filter, but found {len(broader_results)} items matching '{query}' across the store.",
+                "filters_relaxed": True,
+                "filters": {"category": category, "max_price": max_price, "min_price": min_price}
+            }
+    
+    # Fallback 2: If still no results, provide top trending fashion items as smart alternatives
+    if not results:
+        popular_results = search_products(query="", limit=min(5, max_results))
+        return {
+            "status": "no_direct_match",
+            "results": [],
+            "suggested_alternatives": popular_results,
+            "count": 0,
+            "query": query,
+            "message": f"No direct matches found for '{query}'. Here are our top trending fashion picks to suggest instead.",
+            "filters": {"category": category, "max_price": max_price, "min_price": min_price}
+        }
     
     return {
         "status": "success",

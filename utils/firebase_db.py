@@ -183,14 +183,51 @@ def get_all_products(limit: int = 100, filter_categories: bool = True) -> list:
         return []
 
 
-def get_product(sku: str) -> dict:
-    """Get product by SKU"""
+# In-memory cache for ultra-fast product lookups
+import time
+_PRODUCTS_CACHE = None
+_PRODUCTS_CACHE_TIME = 0
+_CACHE_TTL_SECONDS = 300  # 5 minutes
+
+def get_cached_products_list():
+    """Retrieve all products from in-memory cache, populating it if empty or expired"""
+    global _PRODUCTS_CACHE, _PRODUCTS_CACHE_TIME
+    now = time.time()
+    if _PRODUCTS_CACHE is not None and (now - _PRODUCTS_CACHE_TIME) < _CACHE_TTL_SECONDS:
+        return _PRODUCTS_CACHE
     try:
+        db = get_db()
+        docs = db.collection('products').stream()
+        products = []
+        for doc in docs:
+            d = doc.to_dict()
+            d['sku'] = doc.id
+            d['id'] = doc.id
+            products.append(d)
+        _PRODUCTS_CACHE = products
+        _PRODUCTS_CACHE_TIME = now
+        return _PRODUCTS_CACHE
+    except Exception as e:
+        print(f"Error fetching products for cache: {e}")
+        return _PRODUCTS_CACHE or []
+
+
+def get_product(sku: str) -> dict:
+    """Get product by SKU with cache acceleration"""
+    try:
+        # Check cache first for 0ms lookup
+        cached = get_cached_products_list()
+        for p in cached:
+            if p.get('sku') == sku or p.get('id') == sku:
+                return p
+        
+        # Fallback to direct DB read
         db = get_db()
         doc = db.collection('products').document(sku).get()
         if doc.exists:
             data = doc.to_dict()
             data['sku'] = doc.id
+            data['id'] = doc.id
             return data
         return None
     except Exception as e:
@@ -200,23 +237,9 @@ def get_product(sku: str) -> dict:
 
 def search_products(query: str = "", category: str = "", min_price: float = None, 
                    max_price: float = None, limit: int = 10, filter_categories: bool = True) -> list:
-    """Search products by name, category, price range
-    
-    Args:
-        query: Search term for product name
-        category: Category filter
-        min_price: Minimum price filter
-        max_price: Maximum price filter
-        limit: Maximum results to return
-        filter_categories: If True, only search in allowed categories (clothing/fashion)
-    """
+    """Search products by name, category, price range with in-memory acceleration"""
     try:
-        db = get_db()
-        products_ref = db.collection('products')
-        
-        # Get all products for searching
-        docs = products_ref.stream()
-        
+        docs = get_cached_products_list()
         results = []
         query_lower = query.lower().strip() if query else ""
         category_lower = category.lower().strip() if category else ""
@@ -224,10 +247,7 @@ def search_products(query: str = "", category: str = "", min_price: float = None
         # Split query into words for better matching
         query_words = query_lower.split() if query_lower else []
         
-        for doc in docs:
-            data = doc.to_dict()
-            data['sku'] = doc.id
-            
+        for data in docs:
             # Apply category filter for fashion/clothing focus
             if filter_categories and ALLOWED_CATEGORIES:
                 if not is_allowed_category(data.get('category', '')):
@@ -239,7 +259,6 @@ def search_products(query: str = "", category: str = "", min_price: float = None
             # Check if ANY query word matches in name or category
             if query_words:
                 name_match = any(word in name_lower for word in query_words)
-                # Also check category for query words
                 cat_query_match = any(word in cat_lower for word in query_words)
                 query_match = name_match or cat_query_match
             else:
@@ -248,7 +267,7 @@ def search_products(query: str = "", category: str = "", min_price: float = None
             # Category filter
             category_match = not category_lower or category_lower in cat_lower
             
-            price = float(data.get('current_price', 0))
+            price = float(data.get('current_price', data.get('price', 0)))
             min_match = min_price is None or price >= min_price
             max_match = max_price is None or price <= max_price
             

@@ -10,7 +10,8 @@ echo    RETAIL SALES AGENT - LAUNCHER
 echo ============================================
 echo.
 
-set PROJECT_ROOT=c:\Users\VEDANT\retail_sales_agent
+set PROJECT_ROOT=%~dp0
+if "%PROJECT_ROOT:~-1%"=="\" set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
 set FRONTEND_PATH=%PROJECT_ROOT%\ey-frontend\E-Y
 
 echo Starting Backend Server (FastAPI)...

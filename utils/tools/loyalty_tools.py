@@ -12,9 +12,9 @@ from utils.db import get_db, get_customer, update_customer_points, update_custom
 
 # Tier benefits configuration
 TIER_BENEFITS = {
-    "bronze": {"discount": 0, "free_shipping_min": 100, "points_multiplier": 1},
-    "silver": {"discount": 5, "free_shipping_min": 75, "points_multiplier": 1.25},
-    "gold": {"discount": 10, "free_shipping_min": 50, "points_multiplier": 1.5},
+    "bronze": {"discount": 5, "free_shipping_min": 500, "points_multiplier": 1},
+    "silver": {"discount": 10, "free_shipping_min": 500, "points_multiplier": 1.25},
+    "gold": {"discount": 15, "free_shipping_min": 0, "points_multiplier": 1.5},
     "platinum": {"discount": 20, "free_shipping_min": 0, "points_multiplier": 2}
 }
 
@@ -49,6 +49,8 @@ def get_loyalty_status(customer_id: str):
         if points_to_next < 0:
             points_to_next = 0
     
+    free_shipping_text = "free shipping on all orders" if benefits["free_shipping_min"] == 0 else f"free shipping on orders ₹{benefits['free_shipping_min']}+"
+    
     return {
         "status": "success",
         "customer_id": customer_id,
@@ -60,7 +62,7 @@ def get_loyalty_status(customer_id: str):
         "points_multiplier": benefits["points_multiplier"],
         "next_tier": next_tier.capitalize() if next_tier else None,
         "points_to_next_tier": points_to_next,
-        "benefits_summary": f"{benefits['discount']}% discount, free shipping on orders ${benefits['free_shipping_min']}+"
+        "benefits_summary": f"{benefits['discount']}% discount, {free_shipping_text}"
     }
 
 def apply_promotion(promo_code: str, order_total: float, customer_id: str = None):
@@ -178,8 +180,8 @@ def calculate_final_price(customer_id: str, base_price: float, promo_code: str =
             price_after_tier = promo_result["new_total"]
             promo_info = promo_result
     
-    # Determine shipping
-    shipping_cost = 0 if price_after_tier >= benefits["free_shipping_min"] or benefits["free_shipping_min"] == 0 else 5.99
+    # Determine shipping (₹49 standard shipping if below free shipping threshold)
+    shipping_cost = 0.0 if (price_after_tier >= benefits["free_shipping_min"] or benefits["free_shipping_min"] == 0) else 49.0
     
     final_price = round(price_after_tier + shipping_cost, 2)
     

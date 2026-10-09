@@ -9,7 +9,7 @@ Write-Host "   🛒 RETAIL SALES AGENT - LAUNCHER" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-$projectRoot = "c:\Users\VEDANT\retail_sales_agent"
+$projectRoot = if ($PSScriptRoot) { $PSScriptRoot } else { "d:\Projects\retail_sales_agent" }
 $frontendPath = "$projectRoot\ey-frontend\E-Y"
 
 # Start Backend Server

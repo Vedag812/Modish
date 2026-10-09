@@ -15,9 +15,9 @@ import Link from 'next/link';
 
 // Quick reply suggestions
 const QUICK_REPLIES = [
-  { id: 'menswear', label: '👔 Men\'s Fashion', message: 'Show me men\'s clothing', icon: Shirt },
-  { id: 'womenswear', label: '👗 Women\'s Fashion', message: 'Show me women\'s clothing', icon: Shirt },
-  { id: 'footwear', label: '👟 Footwear', message: 'Show me footwear options', icon: Shirt },
+  { id: 'tvs', label: '� Show TVs', message: 'Show me smart TVs', icon: Tv },
+  { id: 'fashion', label: '� Fashion', message: 'Show me clothing options', icon: Shirt },
+  { id: 'electronics', label: '� Electronics', message: 'Show me electronics', icon: Smartphone },
   { id: 'search', label: '🔍 Search Products', message: 'Help me search for products', icon: Search },
   { id: 'promo', label: '🏷️ Apply Promo', message: 'What promo codes are available?', icon: Tag },
   { id: 'track', label: '📦 Track Order', message: 'Track my order status', icon: ClipboardList },
@@ -168,18 +168,18 @@ export default function ChatbotPage() {
     if (cust) {
       return `🛒 Welcome back, **${cust.name}**! 🎉\n\n` +
         `💎 **Your Loyalty Status:** ${cust.loyalty_tier} tier with ${cust.loyalty_points} points\n\n` +
-        `I'm here to help you find the perfect fashion items, check availability, process payments, and manage your orders. Whether you're looking for men's wear, women's fashion, or footwear - I've got you covered!\n\n` +
+        `I'm here to help you find the perfect products, check availability, process payments, and manage your orders. Whether you're looking for electronics, fashion, groceries, or anything else - I've got you covered!\n\n` +
         `**What would you like to do today?**\n` +
-        `• Browse fashion categories\n` +
-        `• Search for specific clothing items\n` +
+        `• Browse products by category\n` +
+        `• Search for specific items\n` +
         `• Check order status\n` +
         `• Apply loyalty rewards & promo codes\n\n` +
         `Just tell me what you need! 😊`;
     }
-    return `👋 **Hello! Welcome to Modish!**\n\n` +
-      `I'm your AI fashion assistant, ready to help you find exactly what you're looking for. From men's fashion to women's wear, footwear to accessories - we have it all!\n\n` +
+    return `👋 **Hello! Welcome to our store!**\n\n` +
+      `I'm your AI shopping assistant, ready to help you find exactly what you're looking for. From electronics to fashion, groceries to home essentials - we have it all!\n\n` +
       `**Here's what I can do for you:**\n` +
-      `• 🔍 Find & recommend fashion items based on your style\n` +
+      `• 🔍 Find & recommend products based on your needs\n` +
       `• 📦 Check stock availability across warehouses\n` +
       `• 💳 Process secure payments via Razorpay\n` +
       `• 🚚 Schedule delivery to your location\n` +
@@ -193,83 +193,45 @@ export default function ChatbotPage() {
     { role: 'model', content: getWelcomeMessage() },
   ]);
   const [input, setInput] = useState('');
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // Setup speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-IN';
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setListening(false);
+      };
+      recognitionRef.current.onerror = () => {
+        setListening(false);
+      };
+      recognitionRef.current.onend = () => {
+        setListening(false);
+      };
+    }
+  }, []);
+
+  const handleMicClick = () => {
+    if (!recognitionRef.current) return;
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+    } else {
+      setListening(true);
+      recognitionRef.current.start();
+    }
+  };
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStage, setLoadingStage] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasSetCustomerWelcome, setHasSetCustomerWelcome] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const loadingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Loading stages for better UX
-  const loadingMessages = [
-    { text: 'Connecting to AI...', icon: '🔗' },
-    { text: 'Analyzing your request...', icon: '🔍' },
-    { text: 'Consulting style experts...', icon: '👔' },
-    { text: 'Checking inventory...', icon: '📦' },
-    { text: 'Almost there...', icon: '✨' },
-  ];
-  
-  // Voice assistant state
-  const [isListening, setIsListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-
-  // Initialize speech recognition
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setSpeechSupported(true);
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'en-IN';
-        
-        recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map(result => result[0])
-            .map(result => result.transcript)
-            .join('');
-          setInput(transcript);
-          
-          // If this is a final result, auto-submit
-          if (event.results[event.results.length - 1].isFinal) {
-            setIsListening(false);
-          }
-        };
-        
-        recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
-        
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-        
-        recognitionRef.current = recognition;
-      }
-    }
-    
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
-    };
-  }, []);
-
-  const toggleVoiceInput = () => {
-    if (!recognitionRef.current) return;
-    
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      setInput('');
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  };
 
   // Update welcome message once customer is loaded
   useEffect(() => {
@@ -278,27 +240,6 @@ export default function ChatbotPage() {
       setHasSetCustomerWelcome(true);
     }
   }, [customer, customerLoading, hasSetCustomerWelcome]);
-
-  // Animate loading stages
-  useEffect(() => {
-    if (isLoading) {
-      setLoadingStage(0);
-      loadingIntervalRef.current = setInterval(() => {
-        setLoadingStage(prev => (prev + 1) % loadingMessages.length);
-      }, 2000);
-    } else {
-      if (loadingIntervalRef.current) {
-        clearInterval(loadingIntervalRef.current);
-        loadingIntervalRef.current = null;
-      }
-      setLoadingStage(0);
-    }
-    return () => {
-      if (loadingIntervalRef.current) {
-        clearInterval(loadingIntervalRef.current);
-      }
-    };
-  }, [isLoading]);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -355,20 +296,11 @@ export default function ChatbotPage() {
       
       const botMessage: ChatMessage = { role: 'model', content: result.message };
       setMessages((prevMessages) => [...prevMessages, botMessage]);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Chatbot error:', error);
-      const errorText = error?.message || String(error);
-      let errorContent = '🛒 **[Sales Agent]** Sorry, I encountered an issue. Please try again.';
-      
-      if (errorText.includes('503') || errorText.includes('overloaded') || errorText.includes('UNAVAILABLE')) {
-        errorContent = '⚡ **[Sales Agent]** Our AI is experiencing high demand right now. Please wait a moment and try again. Your request is important to us!';
-      } else if (errorText.includes('timeout') || errorText.includes('TIMEOUT')) {
-        errorContent = '⏱️ **[Sales Agent]** The request took too long. Please try a simpler question or try again.';
-      }
-      
       const errorMessage: ChatMessage = {
         role: 'model',
-        content: errorContent,
+        content: '🛒 **[Sales Agent]** Sorry, I encountered an issue. Please try again.',
       };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
@@ -393,19 +325,19 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] w-full max-w-4xl mx-auto -mx-4 sm:mx-auto">
+    <div className="flex flex-col h-[calc(100vh-8rem)] w-full max-w-4xl mx-auto">
       {/* Header */}
-      <div className="bg-card border sm:rounded-t-xl p-3 sm:p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-            <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+      <div className="bg-card border rounded-t-xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+            <Bot className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-sm sm:text-base">AI Shopping Assistant</h2>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Your personal shopping companion</p>
+            <h2 className="font-semibold">AI Shopping Assistant</h2>
+            <p className="text-xs text-muted-foreground">Your personal shopping companion</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleNewChat} className="text-xs sm:text-sm">
+        <Button variant="outline" size="sm" onClick={handleNewChat}>
           New Chat
         </Button>
       </div>
@@ -419,30 +351,15 @@ export default function ChatbotPage() {
             ))}
             {isLoading && (
               <div className="flex items-start gap-3">
-                <Avatar className="h-10 w-10 border-2 border-primary/20 animate-pulse">
+                <Avatar className="h-10 w-10 border-2 border-primary/20">
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white">
                     <Bot className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="bg-muted/80 border border-border rounded-2xl rounded-tl-sm px-4 py-4 min-w-[200px]">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{loadingMessages[loadingStage].icon}</span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                        <span className="text-sm font-medium">{loadingMessages[loadingStage].text}</span>
-                      </div>
-                      <div className="flex gap-1 mt-2">
-                        {loadingMessages.map((_, idx) => (
-                          <div 
-                            key={idx} 
-                            className={`h-1 w-6 rounded-full transition-colors duration-300 ${
-                              idx <= loadingStage ? 'bg-primary' : 'bg-muted-foreground/20'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                <div className="bg-muted/80 border border-border rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Agents working...</span>
                   </div>
                 </div>
               </div>
@@ -452,9 +369,9 @@ export default function ChatbotPage() {
       </div>
 
       {/* Input */}
-      <div className="bg-card border sm:rounded-b-xl p-3 sm:p-4">
-        {/* Quick Reply Buttons - Scrollable on mobile */}
-        <div className="flex gap-2 mb-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+      <div className="bg-card border rounded-b-xl p-4">
+        {/* Quick Reply Buttons */}
+        <div className="flex flex-wrap gap-2 mb-3">
           {QUICK_REPLIES.map((reply) => {
             const IconComponent = reply.icon;
             return (
@@ -464,11 +381,10 @@ export default function ChatbotPage() {
                 size="sm"
                 onClick={() => handleQuickReply(reply.message)}
                 disabled={isLoading}
-                className="h-8 text-xs font-medium hover:bg-primary/10 hover:border-primary/50 transition-colors whitespace-nowrap flex-shrink-0"
+                className="h-8 text-xs font-medium hover:bg-primary/10 hover:border-primary/50 transition-colors"
               >
                 <IconComponent className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">{reply.label}</span>
-                <span className="sm:hidden">{reply.label.split(' ')[0]}</span>
+                {reply.label}
               </Button>
             );
           })}
@@ -478,35 +394,32 @@ export default function ChatbotPage() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isListening ? "🎤 Listening... Speak now" : "Ask about products..."}
-            className={`flex-1 h-10 sm:h-11 text-sm transition-colors ${isListening ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}
+            placeholder="Ask about products, orders, returns..."
+            className="flex-1 h-11"
             disabled={isLoading}
           />
-          {speechSupported && (
-            <Button 
-              type="button"
-              variant={isListening ? "destructive" : "outline"}
-              size="lg"
-              className={`h-10 sm:h-11 px-3 ${isListening ? 'animate-pulse' : ''}`}
-              onClick={toggleVoiceInput}
-              disabled={isLoading}
-              title={isListening ? "Stop listening" : "Voice input"}
-            >
-              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={handleMicClick}
+            size="lg"
+            className={`h-11 px-3 ${listening ? 'bg-red-100' : ''}`}
+            aria-label={listening ? 'Stop listening' : 'Start voice input'}
+            disabled={isLoading || !(typeof window !== 'undefined' && 'webkitSpeechRecognition' in window)}
+          >
+            {listening ? <MicOff className="h-5 w-5 text-red-500" /> : <Mic className="h-5 w-5" />}
+          </Button>
           <Button 
             type="submit" 
             disabled={isLoading || !input.trim()}
             size="lg"
-            className="h-10 sm:h-11 px-3 sm:px-6"
+            className="h-11 px-6"
           >
-            <Send className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Send</span>
+            <Send className="h-4 w-4 mr-2" />
+            Send
           </Button>
         </form>
-        <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-center">
-          {speechSupported ? '💬 Type or 🎤 speak your question' : 'Type your question above'}
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          Or type your own question above
         </p>
       </div>
     </div>

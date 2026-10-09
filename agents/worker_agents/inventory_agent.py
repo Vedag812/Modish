@@ -20,7 +20,7 @@ from utils.tools.inventory_tools import (
 
 retry_config = types.HttpRetryOptions(
     attempts=MAX_RETRIES,
-    exp_base=7,
+    exp_base=2,
     initial_delay=RETRY_DELAY,
     http_status_codes=[429, 500, 503, 504],
 )
@@ -78,6 +78,12 @@ Available tools:
 - Don't ask which warehouse - customer doesn't care
 - Don't say "insufficient stock at Kolkata" - Kolkata isn't a warehouse
 - Don't ask for location multiple times
+
+🚫 OUT-OF-STOCK HANDLING:
+- If a product has 0 stock (total_stock == 0 or in_stock is False):
+  1. Clearly inform the customer: "Unfortunately, [Product Name] (SKU: [sku]) is currently sold out."
+  2. Proactively offer solutions: "Would you like to check a different size/color, or have our Recommendation Agent show similar styles that are ready to ship?"
+  3. Never leave the customer at a dead end!
 
 📦 FULFILLMENT OPTIONS:
 1. **Ship to Home**: Standard (5-7 days), Express (2-3 days), Same-day

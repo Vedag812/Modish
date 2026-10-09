@@ -66,19 +66,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-/* Hide scrollbar for horizontal scroll on mobile */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-/* Improve touch targets on mobile */
-@media (max-width: 640px) {
-  button, a, input, select, textarea {
-    min-height: 44px;
-  }
-}

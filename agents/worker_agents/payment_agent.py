@@ -23,7 +23,7 @@ from utils.tools.payment_tools import (
 
 retry_config = types.HttpRetryOptions(
     attempts=MAX_RETRIES,
-    exp_base=7,
+    exp_base=2,
     initial_delay=RETRY_DELAY,
     http_status_codes=[429, 500, 503, 504],
 )

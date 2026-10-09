@@ -24,12 +24,12 @@ USER_ID = "customer_user"
 FIREBASE_SERVICE_ACCOUNT_PATH = os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH", "./firebase-service-account.json")
 print("✅ Using Firebase Firestore")
 
-# Model Configuration
-DEFAULT_MODEL = "gemini-2.5-flash"
-FALLBACK_MODEL = "gemini-2.0-flash-exp"
+# Recommended update in config/config.py:
+DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
+FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "gemini-2.5-flash-lite")
 
 # Agent Configuration
-MAX_RETRIES = 5
+MAX_RETRIES = 2
 RETRY_DELAY = 1
 
 # Channel Types

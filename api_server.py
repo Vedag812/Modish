@@ -116,9 +116,25 @@ class PaymentRequest(BaseModel):
 # ==================== AGENT DETECTION ====================
 
 def detect_agent_from_response(response_text: str, user_input: str) -> str:
-    """Detect which agent handled the query based on response content and user input"""
+    """Detect which agent handled the query based on response tags, content, and user input"""
     response_lower = response_text.lower()
     input_lower = user_input.lower()
+    
+    # Check for direct agent tags first (most accurate)
+    if "[recommendation agent]" in response_lower:
+        return "Recommendation Agent"
+    if "[inventory agent]" in response_lower:
+        return "Inventory Agent"
+    if "[payment agent]" in response_lower:
+        return "Payment Agent"
+    if "[fulfillment agent]" in response_lower:
+        return "Fulfillment Agent"
+    if "[loyalty agent]" in response_lower:
+        return "Loyalty Agent"
+    if "[post-purchase agent]" in response_lower:
+        return "Post-Purchase Agent"
+    if "[sales agent]" in response_lower:
+        return "Sales Agent"
     
     # Check for loyalty/promo related keywords
     loyalty_keywords = ['loyalty', 'points', 'tier', 'bronze', 'silver', 'gold', 'platinum', 
@@ -215,9 +231,11 @@ async def chat_with_agent(request: ChatRequest):
             )
         ):
             if hasattr(event, 'content') and event.content:
-                for part in event.content.parts:
-                    if hasattr(part, 'text') and part.text:
-                        response_text += part.text
+                parts = getattr(event.content, 'parts', None)
+                if parts:
+                    for part in parts:
+                        if hasattr(part, 'text') and part.text:
+                            response_text += part.text
         
         if not response_text:
             response_text = "I'm processing your request. How else can I help?"
