@@ -4,6 +4,7 @@ Processes payments and saves orders to Firebase database
 """
 import random
 from datetime import datetime
+from typing import Optional, List, Dict, Any
 import sys
 import os
 
@@ -41,7 +42,7 @@ except ImportError:
 authorized_payments = {}
 
 
-def authorize_payment(customer_id: str, amount: float, payment_method: str = "credit_card", order_id: str = None):
+def authorize_payment(customer_id: str, amount: float, payment_method: str = "credit_card", order_id: Optional[str] = None):
     """
     Authorize (pre-auth) a payment - places a hold on customer's funds without capturing.
     This simulates the payment gateway's authorization phase.
@@ -106,7 +107,7 @@ def authorize_payment(customer_id: str, amount: float, payment_method: str = "cr
     }
 
 
-def capture_payment(auth_code: str, amount: float = None):
+def capture_payment(auth_code: str, amount: Optional[float] = None):
     """
     Capture (settle) an authorized payment - actually charges the customer.
     This completes the two-step payment flow.
@@ -182,7 +183,7 @@ def capture_payment(auth_code: str, amount: float = None):
     }
 
 
-def decline_transaction(auth_code: str = None, transaction_id: str = None, reason: str = "Merchant declined"):
+def decline_transaction(auth_code: Optional[str] = None, transaction_id: Optional[str] = None, reason: str = "Merchant declined"):
     """
     Decline/void an authorization or transaction.
     This releases the hold on customer's funds.
@@ -332,7 +333,7 @@ def save_transaction_to_db(order_id: str, customer_id: str, amount: float, payme
         return {"status": "error", "message": str(e)}
 
 
-def create_payment_link(customer_id: str, amount: float, description: str = "", items: list = None):
+def create_payment_link(customer_id: str, amount: float, description: str = "", items: Optional[list] = None):
     """
     Create a REAL Razorpay payment link for the customer.
     
@@ -421,7 +422,7 @@ def create_payment_link(customer_id: str, amount: float, description: str = "", 
         }
 
 
-def process_payment(customer_id: str, amount: float, payment_method: str, order_id: str = None, items: list = None):
+def process_payment(customer_id: str, amount: float, payment_method: str, order_id: Optional[str] = None, items: Optional[list] = None):
     """
     Process a payment transaction and save to database.
     
@@ -574,7 +575,7 @@ def get_order_status(order_id: str):
         return {"status": "error", "message": str(e)}
 
 
-def confirm_payment(order_id: str, customer_id: str = None, amount: float = None, items: list = None):
+def confirm_payment(order_id: str, customer_id: Optional[str] = None, amount: Optional[float] = None, items: Optional[list] = None):
     """
     Confirm that payment has been completed for an order.
     Checks with Razorpay if payment was actually made, otherwise simulates realistic payment flow.
@@ -697,7 +698,7 @@ def confirm_payment(order_id: str, customer_id: str = None, amount: float = None
         return {"status": "error", "message": str(e)}
 
 
-def process_in_store_pos(customer_id: str, amount: float, payment_method: str, store_location: str, items: list = None):
+def process_in_store_pos(customer_id: str, amount: float, payment_method: str, store_location: str, items: Optional[list] = None):
     """
     Process payment via in-store Point of Sale (POS) system.
     
@@ -753,7 +754,7 @@ def process_in_store_pos(customer_id: str, amount: float, payment_method: str, s
     }
 
 
-def retry_failed_payment(order_id: str, new_payment_method: str = None, max_retries: int = 3):
+def retry_failed_payment(order_id: str, new_payment_method: Optional[str] = None, max_retries: int = 3):
     """
     Retry a failed payment with optional different payment method.
     Implements exponential backoff for gateway retries.

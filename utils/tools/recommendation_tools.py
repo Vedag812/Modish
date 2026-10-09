@@ -6,6 +6,7 @@ Uses Firebase Firestore
 import json
 import random
 from datetime import datetime
+from typing import Optional
 import sys
 import os
 
@@ -132,7 +133,7 @@ def suggest_bundle_deals(sku: str):
         "message": f"Save ₹{round(total_discount, 2)} when you buy these items together!"
     }
 
-def get_seasonal_promotions(category: str = None):
+def get_seasonal_promotions(category: Optional[str] = None):
     """
     Get current seasonal promotions and deals.
     """
@@ -145,7 +146,7 @@ def get_seasonal_promotions(category: str = None):
         "count": len(promotions)
     }
 
-def search_products_tool(query: str = "", category: str = "", max_price: float = None, min_price: float = None, max_results: int = 10):
+def search_products_tool(query: str = "", category: str = "", max_price: Optional[float] = None, min_price: Optional[float] = None, max_results: int = 10):
     """
     Search for products by name, category, and price range.
     Includes smart fallback when no direct matches are found.

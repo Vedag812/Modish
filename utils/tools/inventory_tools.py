@@ -5,6 +5,7 @@ Real-time stock checking and fulfillment options
 import json
 import random
 from datetime import datetime, timedelta
+from typing import Optional
 import sys
 import os
 
@@ -20,7 +21,7 @@ except:
     USE_REAL_INVENTORY_API = False
     print("⚠️  Inventory API not available, using database")
 
-def check_inventory(sku: str, location: str = None):
+def check_inventory(sku: str, location: Optional[str] = None):
     """
     Check inventory levels for a product across locations.
     
@@ -128,7 +129,7 @@ def get_fulfillment_options(sku: str, customer_location: str = ""):
         "total_available_stock": sum(item["quantity"] for item in available_locations)
     }
 
-def check_in_store_availability(sku: str, store_location: str = None):
+def check_in_store_availability(sku: str, store_location: Optional[str] = None):
     """
     Check product availability for in-store pickup or purchase.
     
@@ -206,7 +207,7 @@ def reserve_click_and_collect(sku: str, quantity: int, store_location: str, cust
     }
 
 
-def reserve_inventory(sku: str, quantity: int, location: str = None):
+def reserve_inventory(sku: str, quantity: int, location: Optional[str] = None):
     """
     Reserve inventory for a customer.
     If location is a warehouse, check stock there.

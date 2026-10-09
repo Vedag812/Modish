@@ -4,6 +4,7 @@ Handles loyalty points, tiers, discounts, and offers
 """
 import json
 from datetime import datetime
+from typing import Optional
 import sys
 import os
 
@@ -65,7 +66,7 @@ def get_loyalty_status(customer_id: str):
         "benefits_summary": f"{benefits['discount']}% discount, {free_shipping_text}"
     }
 
-def apply_promotion(promo_code: str, order_total: float, customer_id: str = None):
+def apply_promotion(promo_code: str, order_total: float, customer_id: Optional[str] = None):
     """
     Validate and apply a promotion code.
     Supports timed promotions with valid_from and valid_until dates.
@@ -155,7 +156,7 @@ def apply_promotion(promo_code: str, order_total: float, customer_id: str = None
         "message": f"Promo {promo_code} applied! You saved ₹{discount_amount}{expiry_info}"
     }
 
-def calculate_final_price(customer_id: str, base_price: float, promo_code: str = None):
+def calculate_final_price(customer_id: str, base_price: float, promo_code: Optional[str] = None):
     """
     Calculate final price with loyalty discount and optional promo code.
     """
